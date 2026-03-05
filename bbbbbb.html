@@ -1,0 +1,283 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Aircraft Monitoring System</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:#0b0f1a;
+color:white;
+font-family:Arial;
+margin:0;
+}
+
+header{
+text-align:center;
+padding:20px;
+font-size:26px;
+color:#00f7ff;
+background:#111827;
+}
+
+.container{
+display:grid;
+grid-template-columns:1fr 2fr;
+gap:20px;
+padding:20px;
+}
+
+.panel{
+background:#111827;
+padding:20px;
+border-radius:10px;
+}
+
+.slider{
+width:100%;
+margin-bottom:10px;
+}
+
+.graphGrid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+canvas{
+width:100% !important;
+height:220px !important;
+background:#0f172a;
+border-radius:8px;
+}
+
+.value{
+margin-bottom:6px;
+}
+
+.alertBox{
+margin-top:10px;
+padding:10px;
+background:#1f2937;
+border-radius:6px;
+}
+
+button{
+padding:12px;
+width:100%;
+background:#ff4444;
+color:white;
+border:none;
+border-radius:6px;
+font-weight:bold;
+cursor:pointer;
+margin-top:10px;
+}
+
+.report{
+margin-top:10px;
+background:#1f2937;
+padding:10px;
+border-radius:6px;
+white-space:pre-line;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+AI Aircraft Predictive Monitoring Dashboard
+</header>
+
+<div class="container">
+
+<div class="panel">
+
+<h3>Instrument Values</h3>
+
+<div class="value">Cabin Pressure: <span id="pressureVal"></span></div>
+<div class="value">Engine Temp: <span id="tempVal"></span></div>
+<div class="value">Oil Pressure: <span id="oilVal"></span></div>
+<div class="value">Fuel Level: <span id="fuelVal"></span></div>
+<div class="value">Airspeed: <span id="speedVal"></span></div>
+<div class="value">Altitude: <span id="altVal"></span></div>
+
+<div class="alertBox" id="alertBox">
+System Monitoring...
+</div>
+
+<h3>Demo Controls</h3>
+
+<label>Pressure Rate</label>
+<input type="range" min="-0.005" max="0.005" step="0.0001" value="-0.001" id="pressureRate" class="slider">
+
+<label>Temperature Rate</label>
+<input type="range" min="-2" max="2" step="0.1" value="0.3" id="tempRate" class="slider">
+
+<label>Oil Rate</label>
+<input type="range" min="-1" max="1" step="0.1" value="0" id="oilRate" class="slider">
+
+<label>Fuel Rate</label>
+<input type="range" min="-1" max="1" step="0.1" value="-0.2" id="fuelRate" class="slider">
+
+<label>Airspeed Rate</label>
+<input type="range" min="-5" max="5" step="0.5" value="0" id="speedRate" class="slider">
+
+<label>Altitude Rate</label>
+<input type="range" min="-200" max="200" step="10" value="0" id="altRate" class="slider">
+
+<button onclick="generateReport()">🚨 EDMG Emergency Report</button>
+
+<div id="reportBox" class="report"></div>
+
+</div>
+
+<div class="panel">
+
+<h3>Sensor Trend Graphs</h3>
+
+<div class="graphGrid">
+
+<canvas id="pressureChart"></canvas>
+<canvas id="tempChart"></canvas>
+<canvas id="oilChart"></canvas>
+<canvas id="fuelChart"></canvas>
+<canvas id="speedChart"></canvas>
+<canvas id="altChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function createChart(id,label){
+
+return new Chart(document.getElementById(id),{
+
+type:"line",
+
+data:{
+labels:[],
+datasets:[{
+label:label,
+data:[],
+borderColor:"#00f7ff",
+borderWidth:2,
+tension:0.3
+}]
+},
+
+options:{
+responsive:true,
+animation:false
+}
+
+})
+
+}
+
+let pressureChart=createChart("pressureChart","Cabin Pressure")
+let tempChart=createChart("tempChart","Engine Temperature")
+let oilChart=createChart("oilChart","Oil Pressure")
+let fuelChart=createChart("fuelChart","Fuel Level")
+let speedChart=createChart("speedChart","Airspeed")
+let altChart=createChart("altChart","Altitude")
+
+let pressure=1.000
+let temp=200
+let oil=45
+let fuel=70
+let speed=230
+let altitude=10000
+
+function push(chart,val){
+
+chart.data.labels.push("")
+chart.data.datasets[0].data.push(val)
+
+if(chart.data.labels.length>30){
+
+chart.data.labels.shift()
+chart.data.datasets[0].data.shift()
+
+}
+
+chart.update()
+
+}
+
+function update(){
+
+pressure+=parseFloat(pressureRate.value)
+temp+=parseFloat(tempRate.value)
+oil+=parseFloat(oilRate.value)
+fuel+=parseFloat(fuelRate.value)
+speed+=parseFloat(speedRate.value)
+altitude+=parseFloat(altRate.value)
+
+pressureVal.innerHTML=pressure.toFixed(3)+" atm"
+tempVal.innerHTML=temp.toFixed(1)+" °C"
+oilVal.innerHTML=oil.toFixed(1)+" psi"
+fuelVal.innerHTML=fuel.toFixed(1)+" %"
+speedVal.innerHTML=speed.toFixed(1)+" kt"
+altVal.innerHTML=altitude.toFixed(0)+" ft"
+
+push(pressureChart,pressure)
+push(tempChart,temp)
+push(oilChart,oil)
+push(fuelChart,fuel)
+push(speedChart,speed)
+push(altChart,altitude)
+
+if(pressure<0.995){
+alertBox.innerHTML="⚠ Warning: Cabin pressure decreasing"
+}
+
+if(pressure<0.990){
+alertBox.innerHTML="🔴 CRITICAL: Cabin pressure unsafe"
+}
+
+}
+
+setInterval(update,2000)
+
+function generateReport(){
+
+let time=new Date().toLocaleString()
+
+let report=
+`EMERGENCY REPORT
+----------------------------
+Time: ${time}
+
+Cabin Pressure: ${pressure.toFixed(3)} atm
+Engine Temp: ${temp.toFixed(1)} °C
+Oil Pressure: ${oil.toFixed(1)} psi
+Fuel Level: ${fuel.toFixed(1)} %
+Airspeed: ${speed.toFixed(1)} kt
+Altitude: ${altitude.toFixed(0)} ft
+
+System Status:
+Check abnormal trends in graphs.
+
+Recommended Action:
+Pilot should verify aircraft systems immediately.`
+
+document.getElementById("reportBox").innerText=report
+
+}
+
+</script>
+
+</body>
+</html>
+```
