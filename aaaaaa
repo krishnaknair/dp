@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Aircraft Health Monitoring</title>
+
+<style>
+
+body{
+background:#0b0f1a;
+font-family:Orbitron,Arial;
+color:white;
+margin:0;
+}
+
+header{
+text-align:center;
+padding:20px;
+font-size:28px;
+background:#111827;
+color:#00f7ff;
+letter-spacing:2px;
+}
+
+.dashboard{
+display:grid;
+grid-template-columns:1fr 2fr;
+gap:20px;
+padding:20px;
+}
+
+.panel{
+background:#111827;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 15px rgba(0,255,255,0.2);
+}
+
+.instrument{
+display:flex;
+justify-content:space-between;
+padding:10px;
+font-size:18px;
+border-bottom:1px solid #1f2937;
+}
+
+.green{color:#22c55e;}
+.yellow{color:#eab308;}
+.red{color:#ef4444;}
+
+.alertBox{
+margin-top:20px;
+padding:15px;
+background:#1f2937;
+border-radius:10px;
+}
+
+button{
+margin-top:10px;
+padding:10px 20px;
+background:#00f7ff;
+border:none;
+border-radius:5px;
+font-weight:bold;
+cursor:pointer;
+}
+
+canvas{
+background:#0f172a;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+AI Aircraft Predictive Monitoring System
+</header>
+
+<div class="dashboard">
+
+<div class="panel">
+
+<h3>Instrument Status</h3>
+
+<div class="instrument">Cabin Pressure <span id="pressure"></span></div>
+<div class="instrument">Engine Temp <span id="engine"></span></div>
+<div class="instrument">Oil Pressure <span id="oil"></span></div>
+<div class="instrument">Fuel Level <span id="fuel"></span></div>
+<div class="instrument">Airspeed <span id="speed"></span></div>
+<div class="instrument">Altitude <span id="altitude"></span></div>
+
+<div class="alertBox">
+
+<h3>AI Alert System</h3>
+
+<div id="alertMessage">
+System Monitoring...
+</div>
+
+<button onclick="ack()">Acknowledge Alert</button>
+
+</div>
+
+</div>
+
+<div class="panel">
+
+<h3>Trend Analysis Graph</h3>
+
+<canvas id="graph" width="700" height="400"></canvas>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+let pressure = 1.000
+let dataPoints=[]
+let labels=[]
+
+const ctx=document.getElementById("graph").getContext("2d")
+
+const chart=new Chart(ctx,{
+type:"line",
+data:{
+labels:labels,
+datasets:[
+{
+label:"Cabin Pressure",
+data:dataPoints,
+borderColor:"#00f7ff",
+tension:0.3
+}
+]
+},
+options:{
+scales:{
+y:{
+min:0.95,
+max:1.01
+}
+}
+}
+})
+
+function update(){
+
+pressure -= Math.random()*0.001
+
+let engine=200+Math.random()*10
+let oil=45+Math.random()*5
+let fuel=60+Math.random()*2
+let speed=230+Math.random()*5
+let altitude=10500+Math.random()*50
+
+document.getElementById("pressure").innerHTML=pressure.toFixed(3)+" atm"
+document.getElementById("engine").innerHTML=engine.toFixed(1)+" °C"
+document.getElementById("oil").innerHTML=oil.toFixed(1)+" psi"
+document.getElementById("fuel").innerHTML=fuel.toFixed(1)+" %"
+document.getElementById("speed").innerHTML=speed.toFixed(1)+" kt"
+document.getElementById("altitude").innerHTML=altitude.toFixed(0)+" ft"
+
+labels.push("")
+dataPoints.push(pressure)
+
+if(labels.length>30){
+labels.shift()
+dataPoints.shift()
+}
+
+chart.update()
+
+if(pressure<0.995){
+document.getElementById("alertMessage").innerHTML=
+"⚠ WARNING: Cabin Pressure Decreasing Trend Detected<br>Prediction: Unsafe level soon"
+}
+
+if(pressure<0.990){
+document.getElementById("alertMessage").innerHTML=
+"🔴 CRITICAL: Cabin Pressure Dangerous<br>Check Pressurization System Immediately"
+}
+
+}
+
+function ack(){
+document.getElementById("alertMessage").innerHTML="Pilot Acknowledged Alert"
+}
+
+setInterval(update,2000)
+
+</script>
+
+</body>
+</html>
