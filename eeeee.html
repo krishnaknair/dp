@@ -1,0 +1,381 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Aircraft Safety Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:#0f172a;
+color:white;
+font-family:Arial;
+margin:0;
+}
+
+header{
+background:#020617;
+padding:15px;
+text-align:center;
+font-size:24px;
+color:#38bdf8;
+}
+
+.container{
+display:grid;
+grid-template-columns:1fr 2fr 1fr;
+gap:15px;
+padding:15px;
+}
+
+.panel{
+background:#020617;
+padding:15px;
+border-radius:8px;
+}
+
+.value{margin-bottom:4px}
+
+.slider{width:100%}
+
+button{
+width:100%;
+padding:8px;
+margin-top:6px;
+background:#ef4444;
+color:white;
+border:none;
+border-radius:5px;
+}
+
+canvas{
+background:#020617;
+border-radius:6px;
+height:180px !important;
+}
+
+.alert{
+background:#1e293b;
+padding:8px;
+border-radius:5px;
+margin-top:8px;
+}
+
+.bar{
+height:20px;
+background:#334155;
+border-radius:5px;
+overflow:hidden;
+}
+
+.fill{
+height:20px;
+background:#ef4444;
+width:0%;
+}
+
+input{
+width:100%;
+margin-bottom:4px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>AI Aircraft Crash Prevention Dashboard</header>
+
+<div class="container">
+
+<!-- LEFT PANEL -->
+
+<div class="panel">
+
+<h3>Sensor Values</h3>
+
+<div class="value">Cabin Pressure <span id="pressureVal"></span></div>
+<div class="value">Engine Temp <span id="tempVal"></span></div>
+<div class="value">Fuel Level <span id="fuelVal"></span></div>
+<div class="value">Airspeed <span id="speedVal"></span></div>
+<div class="value">Altitude <span id="altVal"></span></div>
+<div class="value">Angle of Attack <span id="aoaVal"></span></div>
+<div class="value">Vertical Speed <span id="vsVal"></span></div>
+<div class="value">Engine RPM <span id="rpmVal"></span></div>
+
+<h3>Simulation Controls</h3>
+
+<label>Pressure Rate</label>
+<input type="range" min="-0.005" max="0.005" step="0.0001" value="0" id="pressureRate" class="slider">
+
+<label>Temp Rate</label>
+<input type="range" min="-2" max="2" step="0.1" value="0" id="tempRate" class="slider">
+
+<label>Fuel Rate</label>
+<input type="range" min="-1" max="1" step="0.1" value="0" id="fuelRate" class="slider">
+
+<label>Airspeed Rate</label>
+<input type="range" min="-5" max="5" step="0.5" value="0" id="speedRate" class="slider">
+
+<label>Altitude Rate</label>
+<input type="range" min="-200" max="200" step="10" value="0" id="altRate" class="slider">
+
+<label>AOA Rate</label>
+<input type="range" min="-5" max="5" step="0.5" value="0" id="aoaRate" class="slider">
+
+<label>Vertical Speed</label>
+<input type="range" min="-500" max="500" step="50" value="0" id="vsRate" class="slider">
+
+<label>RPM Rate</label>
+<input type="range" min="-200" max="200" step="10" value="0" id="rpmRate" class="slider">
+
+<h3>Scenario Buttons</h3>
+
+<button onclick="scenarioPressure()">Cabin Pressure Leak</button>
+<button onclick="scenarioEngine()">Engine Overheat</button>
+<button onclick="scenarioFuel()">Fuel Leak</button>
+<button onclick="scenarioStall()">Stall Risk</button>
+
+<button onclick="generateReport()">🚨 EDMG Emergency Report</button>
+
+</div>
+
+<!-- CENTER PANEL -->
+
+<div class="panel">
+
+<h3>Sensor Graphs</h3>
+
+<canvas id="pressureChart"></canvas>
+<canvas id="tempChart"></canvas>
+<canvas id="speedChart"></canvas>
+<canvas id="altChart"></canvas>
+<canvas id="aoaChart"></canvas>
+
+</div>
+
+<!-- RIGHT PANEL -->
+
+<div class="panel">
+
+<h3>Ideal Flight Parameters</h3>
+
+<label>Ideal Airspeed</label>
+<input id="idealSpeed" value="230">
+
+<label>Ideal Altitude</label>
+<input id="idealAlt" value="10000">
+
+<label>Ideal AOA</label>
+<input id="idealAOA" value="5">
+
+<label>Ideal Engine Temp</label>
+<input id="idealTemp" value="200">
+
+<label>Ideal Pressure</label>
+<input id="idealPressure" value="1">
+
+<label>Ideal RPM</label>
+<input id="idealRPM" value="2000">
+
+<h3>Flight Stability</h3>
+
+<div class="bar">
+<div class="fill" id="stabilityFill"></div>
+</div>
+
+<h3>Crash Risk</h3>
+
+<div class="bar">
+<div class="fill" id="riskFill"></div>
+</div>
+
+<h3>AI Analysis</h3>
+
+<div class="alert" id="alertBox">System Monitoring</div>
+
+<h3>AI Recommendation</h3>
+
+<div class="alert" id="recommendBox"></div>
+
+<h3>Flight Phase</h3>
+
+<div id="phase">Cruise</div>
+
+<div class="alert" id="reportBox"></div>
+
+</div>
+
+</div>
+
+<script>
+
+function speak(msg){
+speechSynthesis.speak(new SpeechSynthesisUtterance(msg))
+}
+
+function makeChart(id,label){
+return new Chart(document.getElementById(id),{
+type:"line",
+data:{
+labels:[],
+datasets:[
+{label:label,data:[],borderColor:"#38bdf8"},
+{label:"Ideal",data:[],borderColor:"#22c55e"}
+]
+},
+options:{animation:false}
+})
+}
+
+let pressureChart=makeChart("pressureChart","Pressure")
+let tempChart=makeChart("tempChart","Temp")
+let speedChart=makeChart("speedChart","Speed")
+let altChart=makeChart("altChart","Altitude")
+let aoaChart=makeChart("aoaChart","AOA")
+
+let pressure=1
+let temp=200
+let fuel=70
+let speed=230
+let altitude=10000
+let aoa=5
+let vs=0
+let rpm=2000
+
+function push(chart,val,ideal){
+
+chart.data.labels.push("")
+chart.data.datasets[0].data.push(val)
+chart.data.datasets[1].data.push(ideal)
+
+if(chart.data.labels.length>30){
+chart.data.labels.shift()
+chart.data.datasets[0].data.shift()
+chart.data.datasets[1].data.shift()
+}
+
+chart.update()
+
+}
+
+function update(){
+
+pressure+=parseFloat(pressureRate.value)
+temp+=parseFloat(tempRate.value)
+fuel+=parseFloat(fuelRate.value)
+speed+=parseFloat(speedRate.value)
+altitude+=parseFloat(altRate.value)
+aoa+=parseFloat(aoaRate.value)
+vs=parseFloat(vsRate.value)
+rpm+=parseFloat(rpmRate.value)
+
+pressureVal.innerHTML=pressure.toFixed(3)
+tempVal.innerHTML=temp.toFixed(1)
+fuelVal.innerHTML=fuel.toFixed(1)
+speedVal.innerHTML=speed.toFixed(1)
+altVal.innerHTML=altitude.toFixed(0)
+aoaVal.innerHTML=aoa.toFixed(1)
+vsVal.innerHTML=vs
+rpmVal.innerHTML=rpm
+
+let idealSpeedVal=parseFloat(idealSpeed.value)
+let idealAltVal=parseFloat(idealAlt.value)
+let idealAOAVal=parseFloat(idealAOA.value)
+let idealTempVal=parseFloat(idealTemp.value)
+let idealPressVal=parseFloat(idealPressure.value)
+
+push(pressureChart,pressure,idealPressVal)
+push(tempChart,temp,idealTempVal)
+push(speedChart,speed,idealSpeedVal)
+push(altChart,altitude,idealAltVal)
+push(aoaChart,aoa,idealAOAVal)
+
+let stability=100
+
+stability-=Math.abs(speed-idealSpeedVal)*0.2
+stability-=Math.abs(altitude-idealAltVal)/500
+stability-=Math.abs(aoa-idealAOAVal)*2
+
+if(stability<0)stability=0
+stabilityFill.style.width=stability+"%"
+
+let risk=0
+let message="Flight Stable"
+let recommendation="Maintain parameters"
+
+if(pressure<0.995){
+risk+=20
+message="Cabin pressure decreasing"
+recommendation="Check pressurization system"
+}
+
+if(temp>220){
+risk+=25
+message="Engine overheating"
+recommendation="Reduce engine power"
+}
+
+if(aoa>12 && speed<200){
+risk+=40
+message="STALL RISK"
+recommendation="Lower nose and increase throttle"
+speak("Warning stall risk detected")
+}
+
+if(vs<-400){
+risk+=30
+message="Rapid descent"
+recommendation="Increase lift"
+}
+
+if(rpm<1500){
+risk+=20
+message="Engine RPM low"
+recommendation="Increase throttle"
+}
+
+if(risk>80){
+message="CRASH PREVENTION MODE ACTIVATED"
+recommendation="Increase throttle | Lower nose | Stabilize airspeed"
+}
+
+riskFill.style.width=risk+"%"
+
+alertBox.innerHTML=message
+recommendBox.innerHTML=recommendation
+
+if(altitude<2000)phase.innerHTML="Landing"
+else if(vs>200)phase.innerHTML="Climb"
+else if(vs<-200)phase.innerHTML="Descent"
+else phase.innerHTML="Cruise"
+
+}
+
+setInterval(update,2000)
+
+function scenarioPressure(){pressureRate.value=-0.003}
+function scenarioEngine(){tempRate.value=1.5}
+function scenarioFuel(){fuelRate.value=-0.8}
+function scenarioStall(){aoaRate.value=2;speedRate.value=-3}
+
+function generateReport(){
+
+let report="EMERGENCY REPORT\n\n"+
+"Pressure:"+pressure+"\n"+
+"Temp:"+temp+"\n"+
+"Airspeed:"+speed+"\n"+
+"Altitude:"+altitude+"\n"+
+"AOA:"+aoa+"\n"+
+"RPM:"+rpm
+
+reportBox.innerText=report
+
+}
+
+</script>
+
+</body>
+</html>
+```
