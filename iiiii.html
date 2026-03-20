@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>AI Aircraft Crash Prevention Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --bg:      #0f172a;
+  --panel:   #1e293b;
+  --inset:   #0f172a;
+  --border:  #334155;
+  --accent:  #38bdf8;
+  --green:   #4ade80;
+  --amber:   #fbbf24;
+  --red:     #f87171;
+  --text:    #e2e8f0;
+  --muted:   #94a3b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+}
+
+/* HEADER */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.header-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+.header-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* DROPDOWN — fixed */
+.dropdown { position: relative; }
+.dropdown > button {
+  background: var(--accent);
+  color: #0f172a;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: auto;
+  margin: 0;
+  transition: opacity 0.15s;
+}
+.dropdown > button:hover { opacity: 0.85; }
+.menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 190px;
+  z-index: 200;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.menu button {
+  background: transparent;
+  color: var(--text);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  margin: 0;
+  transition: background 0.15s;
+}
+.menu button:hover { background: rgba(56,189,248,0.1); color: var(--accent); }
+.menu button:last-child { border-bottom: none; }
+
+/* LAYOUT */
+.container {
+  display: grid;
+  grid-template-columns: 270px 1fr 290px;
+  gap: 12px;
+  padding: 12px;
+}
+
+/* PANELS */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.panel h3 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin: 14px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.panel h3:first-child { margin-top: 0; }
+
+/* SENSOR GRID */
+.sensor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.sensor-card {
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.sensor-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+.sensor-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* SLIDERS */
+.sim-row { margin-bottom: 8px; }
+.sim-label {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 3px;
+}
+input[type=range].slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 5px;
+  background: var(--inset);
+  border-radius: 3px;
+  outline: none;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+input[type=range].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* CHARTS */
+.chart-wrap {
+  margin-bottom: 10px;
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 8px 4px;
+  width: 100%;
+  display: block;
+}
+.chart-inner {
+  position: relative;
+  height: 200px;
+  width: 100%;
+}
+.chart-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  display: block;
+}
+canvas { border-radius: 4px; }
+
+/* Ideal params */
+.idealGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  align-items: center;
+}
+.idealGrid label {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.idealGrid input {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+.idealGrid input:focus {
+  border-color: var(--accent);
+}
+
+/* Bars */
+.bar-wrap { margin-bottom: 4px; }
+.bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.bar-title { font-size: 11px; color: var(--muted); }
+.bar-pct { font-size: 12px; font-weight: 600; color: var(--accent); }
+.bar {
+  height: 12px;
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 6px;
+  transition: width 0.5s ease, background 0.4s ease;
+  background: var(--green);
+}
+#riskFill { background: var(--red); }
+
+/* LEFT PANEL EXTRAS — separated by a clear divider, never touching sim controls */
+.extras-divider {
+  border: none;
+  border-top: 2px dashed var(--border);
+  margin: 18px 0 14px;
+}
+
+/* G-FORCE */
+.gforce-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.gforce-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+.gforce-label { font-size: 11px; color: var(--muted); }
+.gforce-bar-wrap { margin-top: 4px; }
+
+/* FUEL WARNING */
+.fuel-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+}
+.fuel-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.fuel-text { font-size: 12px; color: var(--text); }
+.fuel-level-bar {
+  height: 8px;
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+.fuel-level-fill {
+  height: 100%;
+  width: 70%;
+  border-radius: 4px;
+  background: var(--green);
+  transition: width 0.5s ease, background 0.4s ease;
+}
+
+/* SCENARIO BUTTONS */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.scenario-btn {
+  background: var(--inset);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  width: 100%;
+  margin: 0;
+}
+.scenario-btn:hover { background: rgba(56,189,248,0.12); border-color: var(--accent); color: var(--accent); }
+.scenario-btn.active { background: rgba(248,113,113,0.15); border-color: var(--red); color: var(--red); }
+
+/* FLIGHT LOG */
+.flight-log {
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  height: 130px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.flight-log::-webkit-scrollbar { width: 4px; }
+.flight-log::-webkit-scrollbar-track { background: transparent; }
+.flight-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.log-entry { padding: 3px 0; border-bottom: 1px solid rgba(51,65,85,0.5); display: flex; gap: 8px; }
+.log-entry:last-child { border-bottom: none; }
+.log-time { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.log-msg { color: var(--text); }
+.log-ok   .log-msg { color: var(--green); }
+.log-warn .log-msg { color: var(--amber); }
+.log-crit .log-msg { color: var(--red); }
+
+/* section sub-label */
+.extra-section { margin-bottom: 14px; }
+.extra-section h4 {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 7px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Alerts */
+.alert {
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text);
+}
+#alertBox {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+}
+#recommendBox { font-size: 12px; line-height: 1.8; }
+
+#phase {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--inset);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  margin-bottom: 6px;
+}
+#reportBox { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <div class="header-title">AI Aircraft Crash Prevention Dashboard</div>
+    <div class="header-meta">REAL-TIME FLIGHT MONITORING SYSTEM · AI DECISION SUPPORT</div>
+  </div>
+  <div class="dropdown">
+    <button onclick="toggleMenu()">Touch Down Control ▼</button>
+    <div id="touchMenu" class="menu">
+      <button onclick="makeStall()">⚠ Make Stall</button>
+      <button onclick="stabilizeAircraft()">✦ Stabilize Aircraft</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+    <h3>Sensor Values</h3>
+    <div class="sensor-grid">
+      <div class="sensor-card"><div class="sensor-label">Cabin Pres.</div><div class="sensor-val" id="pressureVal">—</div></div>
+      <div class="sensor-card"><div class="sensor-label">Eng. Temp</div><div class="sensor-val" id="tempVal">—</div></div>
+      <div class="sensor-card"><div class="sensor-label">Fuel Level</div><div class="sensor-val" id="fuelVal">—</div></div>
+      <div class="sensor-card"><div class="sensor-label">Airspeed</div><div class="sensor-val" id="speedVal">—</div></div>
+      <div class="sensor-card"><div class="sensor-label">Altitude</div><div class="sensor-val" id="altVal">—</div></div>
+      <div class="sensor-card"><div class="sensor-label">AOA</div><div class="sensor-val" id="aoaVal">—</div></div>
+      <div class="sensor-card"><div class="sensor-label">Vert. Speed</div><div class="sensor-val" id="vsVal">—</div></div>
+      <div class="sensor-card"><div class="sensor-label">Engine RPM</div><div class="sensor-val" id="rpmVal">—</div></div>
+    </div>
+
+    <h3>Simulation Controls</h3>
+    <div class="sim-row"><span class="sim-label">Pressure Rate</span><input type="range" min="-0.005" max="0.005" step="0.0001" value="0" id="pressureRate" class="slider"></div>
+    <div class="sim-row"><span class="sim-label">Temp Rate</span><input type="range" min="-2" max="2" step="0.1" value="0" id="tempRate" class="slider"></div>
+    <div class="sim-row"><span class="sim-label">Fuel Rate</span><input type="range" min="-1" max="1" step="0.1" value="0" id="fuelRate" class="slider"></div>
+    <div class="sim-row"><span class="sim-label">Airspeed Rate</span><input type="range" min="-5" max="5" step="0.5" value="0" id="speedRate" class="slider"></div>
+    <div class="sim-row"><span class="sim-label">Altitude Rate</span><input type="range" min="-200" max="200" step="10" value="0" id="altRate" class="slider"></div>
+    <div class="sim-row"><span class="sim-label">AOA Rate</span><input type="range" min="-5" max="5" step="0.5" value="0" id="aoaRate" class="slider"></div>
+    <div class="sim-row"><span class="sim-label">Vertical Speed</span><input type="range" min="-500" max="500" step="50" value="0" id="vsRate" class="slider"></div>
+    <div class="sim-row"><span class="sim-label">RPM Rate</span><input type="range" min="-200" max="200" step="10" value="0" id="rpmRate" class="slider"></div>
+
+    <!-- ══ EXTRAS SECTION — separated clearly ══ -->
+    <hr class="extras-divider">
+
+    <!-- G-FORCE INDICATOR -->
+    <div class="extra-section">
+      <h4>G-Force</h4>
+      <div class="gforce-row">
+        <div>
+          <div class="gforce-val" id="gforceVal">1.0 G</div>
+          <div class="gforce-label">Current load factor</div>
+        </div>
+        <div id="gforceStatus" style="font-size:11px;color:var(--green);font-weight:600">NORMAL</div>
+      </div>
+      <div class="gforce-bar-wrap">
+        <div class="bar-row"><span class="bar-title">G Load</span><span class="bar-pct" id="gforcePct">—</span></div>
+        <div class="bar"><div class="fill" id="gforceFill" style="background:var(--green)"></div></div>
+      </div>
+    </div>
+
+    <!-- FUEL WARNING -->
+    <div class="extra-section">
+      <h4>Fuel Warning</h4>
+      <div class="fuel-status">
+        <div class="fuel-dot" id="fuelDot"></div>
+        <div class="fuel-text" id="fuelWarnText">Fuel level OK</div>
+      </div>
+      <div class="fuel-level-bar"><div class="fuel-level-fill" id="fuelLevelFill"></div></div>
+    </div>
+
+    <!-- SCENARIO PRESETS -->
+    <div class="extra-section">
+      <h4>Scenario Presets</h4>
+      <div class="scenario-grid">
+        <button class="scenario-btn" onclick="runScenario('engine')">⚙ Engine Failure</button>
+        <button class="scenario-btn" onclick="runScenario('decompression')">💨 Rapid Decomp.</button>
+        <button class="scenario-btn" onclick="runScenario('turbulence')">〰 Heavy Turbulence</button>
+        <button class="scenario-btn" onclick="runScenario('emergency')">🛬 Emergency Landing</button>
+      </div>
+    </div>
+
+    <!-- FLIGHT LOG -->
+    <div class="extra-section">
+      <h4>Flight Log</h4>
+      <div class="flight-log" id="flightLog">
+        <div class="log-entry log-ok"><span class="log-time" id="logInitTime">00:00</span><span class="log-msg">System initialized. Monitoring active.</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div class="panel">
+    <h3>Sensor Graphs</h3>
+    <div class="chart-wrap"><span class="chart-label">PRESSURE</span><div class="chart-inner"><canvas id="pressureChart"></canvas></div></div>
+    <div class="chart-wrap"><span class="chart-label">ENGINE TEMP</span><div class="chart-inner"><canvas id="tempChart"></canvas></div></div>
+    <div class="chart-wrap"><span class="chart-label">AIRSPEED</span><div class="chart-inner"><canvas id="speedChart"></canvas></div></div>
+    <div class="chart-wrap"><span class="chart-label">ALTITUDE</span><div class="chart-inner"><canvas id="altChart"></canvas></div></div>
+    <div class="chart-wrap"><span class="chart-label">ANGLE OF ATTACK</span><div class="chart-inner"><canvas id="aoaChart"></canvas></div></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel">
+    <h3>Ideal Flight Parameters</h3>
+    <div class="idealGrid">
+      <label>Airspeed</label>    <input id="idealSpeed"    value="230">
+      <label>Altitude</label>    <input id="idealAlt"      value="10000">
+      <label>AOA</label>         <input id="idealAOA"      value="5">
+      <label>Engine Temp</label> <input id="idealTemp"     value="200">
+      <label>Pressure</label>    <input id="idealPressure" value="1">
+      <label>Engine RPM</label>  <input id="idealRPM"      value="2000">
+    </div>
+
+    <h3>Flight Stability</h3>
+    <div class="bar-wrap">
+      <div class="bar-row"><span class="bar-title">STABILITY INDEX</span><span class="bar-pct" id="stabilityPct">—</span></div>
+      <div class="bar"><div class="fill" id="stabilityFill"></div></div>
+    </div>
+
+    <h3>Crash Risk</h3>
+    <div class="bar-wrap">
+      <div class="bar-row"><span class="bar-title">RISK LEVEL</span><span class="bar-pct" id="riskPct">—</span></div>
+      <div class="bar"><div class="fill" id="riskFill"></div></div>
+    </div>
+
+    <h3>AI Analysis</h3>
+    <div class="alert" id="alertBox">System Monitoring</div>
+
+    <h3>AI Recommendation</h3>
+    <div class="alert" id="recommendBox"></div>
+
+    <h3>Flight Phase</h3>
+    <div id="phase">Cruise</div>
+
+    <div class="alert" id="reportBox"></div>
+  </div>
+
+</div>
+
+<script>
+const _stabilityFill = document.getElementById('stabilityFill');
+const _riskFill = document.getElementById('riskFill');
+const _stabilityPct = document.getElementById('stabilityPct');
+const _riskPct = document.getElementById('riskPct');
+
+function speak(msg){
+  speechSynthesis.speak(new SpeechSynthesisUtterance(msg))
+}
+
+function toggleMenu(){
+  let m=document.getElementById("touchMenu")
+  m.style.display=(m.style.display==="block")?"none":"block"
+}
+
+function makeChart(id,label){
+  return new Chart(document.getElementById(id),{
+    type:"line",
+    data:{labels:[],datasets:[
+      {label:label,data:[],borderColor:"#00e5ff",borderWidth:1.5,pointRadius:0,tension:0.3,fill:false},
+      {label:"Ideal",data:[],borderColor:"#39ff14",borderWidth:1,borderDash:[4,4],pointRadius:0,tension:0.3,fill:false}
+    ]},
+    options:{
+      animation:false,
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:"#94a3b8",font:{family:"Segoe UI",size:11}}}},
+      scales:{
+        x:{display:false,grid:{color:"#1e293b"}},
+        y:{ticks:{color:"#94a3b8",font:{family:"Segoe UI",size:11}},grid:{color:"#1e293b"}}
+      }
+    }
+  })
+}
+
+let pressureChart=makeChart("pressureChart","Pressure")
+let tempChart=makeChart("tempChart","Temp")
+let speedChart=makeChart("speedChart","Speed")
+let altChart=makeChart("altChart","Altitude")
+let aoaChart=makeChart("aoaChart","AOA")
+
+let pressure=1
+let temp=200
+let fuel=70
+let speed=230
+let altitude=10000
+let aoa=5
+let vs=0
+let rpm=2000
+
+function push(chart,val,ideal){
+  chart.data.labels.push("")
+  chart.data.datasets[0].data.push(val)
+  chart.data.datasets[1].data.push(ideal)
+  if(chart.data.labels.length>30){
+    chart.data.labels.shift()
+    chart.data.datasets[0].data.shift()
+    chart.data.datasets[1].data.shift()}
+  chart.update()
+}
+
+function generateRecommendations(){
+  let rec=[]
+  let tolSpeed=10
+  let tolAlt=500
+  let tolAOA=2
+  let tolTemp=10
+  let tolPress=0.01
+  let tolRPM=150
+
+  let idealSpeedVal=parseFloat(idealSpeed.value)
+  let idealAltVal=parseFloat(idealAlt.value)
+  let idealAOAVal=parseFloat(idealAOA.value)
+  let idealTempVal=parseFloat(idealTemp.value)
+  let idealPressVal=parseFloat(idealPressure.value)
+  let idealRPMVal=parseFloat(idealRPM.value)
+
+  if(Math.abs(speed-idealSpeedVal)>tolSpeed){
+    rec.push((speed<idealSpeedVal?"▲ Increase":"▼ Reduce")+" airspeed")
+  }
+  if(Math.abs(altitude-idealAltVal)>tolAlt){
+    rec.push("↕ Adjust altitude")
+  }
+  if(Math.abs(aoa-idealAOAVal)>tolAOA){
+    rec.push((aoa>idealAOAVal?"▼ Lower":"▲ Increase")+" angle of attack")
+  }
+  if(Math.abs(temp-idealTempVal)>tolTemp){
+    rec.push("⊙ Adjust engine temperature")
+  }
+  if(Math.abs(pressure-idealPressVal)>tolPress){
+    rec.push("⊕ Stabilize cabin pressure")
+  }
+  if(Math.abs(rpm-idealRPMVal)>tolRPM){
+    rec.push((rpm<idealRPMVal?"▲ Increase":"▼ Reduce")+" engine RPM")
+  }
+  rec.push("⇅ Stabilize vertical speed")
+
+  recommendBox.innerHTML="<span style='color:var(--amber);font-size:11px;font-weight:600'>Recommended adjustments</span><br>"+rec.join("<br>")
+}
+
+function update(){
+  pressure+=parseFloat(pressureRate.value)
+  temp+=parseFloat(tempRate.value)
+  fuel+=parseFloat(fuelRate.value)
+  speed+=parseFloat(speedRate.value)
+  altitude+=parseFloat(altRate.value)
+  aoa+=parseFloat(aoaRate.value)
+  vs=parseFloat(vsRate.value)
+  rpm+=parseFloat(rpmRate.value)
+
+  pressureVal.innerHTML=pressure.toFixed(3)
+  tempVal.innerHTML=temp.toFixed(1)
+  fuelVal.innerHTML=fuel.toFixed(1)
+  speedVal.innerHTML=speed.toFixed(1)
+  altVal.innerHTML=altitude.toFixed(0)
+  aoaVal.innerHTML=aoa.toFixed(1)
+  vsVal.innerHTML=vs
+  rpmVal.innerHTML=rpm
+
+  let idealSpeedVal=parseFloat(idealSpeed.value)
+  let idealAltVal=parseFloat(idealAlt.value)
+  let idealAOAVal=parseFloat(idealAOA.value)
+  let idealTempVal=parseFloat(idealTemp.value)
+  let idealPressVal=parseFloat(idealPressure.value)
+
+  push(pressureChart,pressure,idealPressVal)
+  push(tempChart,temp,idealTempVal)
+  push(speedChart,speed,idealSpeedVal)
+  push(altChart,altitude,idealAltVal)
+  push(aoaChart,aoa,idealAOAVal)
+
+  let stability=100
+  stability-=Math.abs(speed-idealSpeedVal)*0.2
+  stability-=Math.abs(altitude-idealAltVal)/500
+  stability-=Math.abs(aoa-idealAOAVal)*2
+  if(stability<0)stability=0
+  _stabilityFill.style.width=stability+"%"
+  _stabilityPct.textContent=stability.toFixed(0)+"%"
+  _stabilityFill.style.background=stability>60?"var(--green)":stability>30?"var(--amber)":"var(--red)"
+
+  let risk=0
+  let message="Flight Stable"
+
+  if(pressure<0.995){risk+=20;message="Cabin pressure decreasing"}
+  if(temp>220){risk+=25;message="Engine overheating"}
+
+  if(aoa>12 && speed<200){
+    risk+=40
+    message="⚠ STALL RISK"
+    speak("Warning stall risk detected")
+  }
+
+  if(vs<-400){risk+=30;message="Rapid descent"}
+  if(rpm<1500){risk+=20;message="Engine RPM low"}
+
+  if(risk>80){
+    message="🔴 CRASH PREVENTION MODE ACTIVATED"
+  }
+
+  _riskFill.style.width=risk+"%"
+  _riskPct.textContent=risk+"%"
+  _riskFill.style.background=risk<30?"var(--green)":risk<60?"var(--amber)":"var(--red)"
+  alertBox.innerHTML=message
+  alertBox.style.color=risk>60?"var(--red)":risk>30?"var(--amber)":"var(--green)"
+
+  generateRecommendations()
+
+  if(altitude<2000)phase.innerHTML="▾ LANDING"
+  else if(vs>200)phase.innerHTML="▲ CLIMB"
+  else if(vs<-200)phase.innerHTML="▼ DESCENT"
+  else phase.innerHTML="⇒ CRUISE"
+}
+
+window._mainInterval = setInterval(update,2000)
+
+function makeStall(){
+  aoaRate.value=10
+  speedRate.value=-20
+  vsRate.value=-400
+  altRate.value=-50
+  alertBox.innerHTML="⚠ STALL CONDITION DETECTED"
+  alertBox.style.color="var(--red)"
+  speak("Warning stall condition detected. Crash risk increasing.")
+}
+
+function stabilizeAircraft(){
+  speak("Aircraft stabilization in progress. Returning to safe flight.")
+
+  /* Step 1 — immediately zero all rates so no more drift */
+  speedRate.value    = 0
+  aoaRate.value      = 0
+  altRate.value      = 0
+  vsRate.value       = 0
+  rpmRate.value      = 0
+  pressureRate.value = 0
+  tempRate.value     = 0
+
+  /* Step 2 — read ideal targets */
+  const targetSpeed    = parseFloat(idealSpeed.value)    || 230
+  const targetAlt      = parseFloat(idealAlt.value)      || 10000
+  const targetAOA      = parseFloat(idealAOA.value)      || 5
+  const targetTemp     = parseFloat(idealTemp.value)     || 200
+  const targetPressure = parseFloat(idealPressure.value) || 1
+  const targetRPM      = parseFloat(idealRPM.value)      || 2000
+
+  /* Step 3 — smoothly move sensor values toward ideal over ~7 seconds */
+  const steps    = 35
+  const duration = 7000
+  const iv       = duration / steps
+  let   step     = 0
+
+  /* clear any previous stabilizer */
+  if(window._stabilizeInterval) clearInterval(window._stabilizeInterval)
+
+  window._stabilizeInterval = setInterval(function(){
+    const t = 0.18   // lerp factor — higher = faster
+
+    speed    += (targetSpeed    - speed)    * t
+    altitude += (targetAlt      - altitude) * t
+    aoa      += (targetAOA      - aoa)      * t
+    temp     += (targetTemp     - temp)     * t
+    pressure += (targetPressure - pressure) * t
+    rpm      += (targetRPM      - rpm)      * t
+    vs       += (0              - vs)       * t
+
+    /* On last step snap exactly to ideal so nothing lingers */
+    step++
+    if(step >= steps){
+      speed    = targetSpeed
+      altitude = targetAlt
+      aoa      = targetAOA
+      temp     = targetTemp
+      pressure = targetPressure
+      rpm      = targetRPM
+      vs       = 0
+      clearInterval(window._stabilizeInterval)
+      logEvent('✔ Aircraft stabilized — all parameters restored', 'ok')
+      speak("Aircraft stabilized. All parameters normal.")
+      /* clear any active scenario highlight */
+      document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'))
+    }
+  }, iv)
+}
+
+/* ══════════════════════════════════════
+   NEW FEATURES — Flight Log, Fuel Warning,
+   G-Force, Scenario Presets
+   All existing logic above is untouched.
+   ══════════════════════════════════════ */
+
+/* Flight start time for log timestamps */
+const flightStart = Date.now()
+function getTimestamp(){
+  const elapsed = Math.floor((Date.now() - flightStart) / 1000)
+  const m = String(Math.floor(elapsed / 60)).padStart(2,'0')
+  const s = String(elapsed % 60).padStart(2,'0')
+  return m + ':' + s
+}
+document.getElementById('logInitTime').textContent = getTimestamp()
+
+/* Log a new entry — deduplicates repeated messages */
+let lastLoggedMsg = ''
+function logEvent(msg, level){
+  if(msg === lastLoggedMsg) return
+  lastLoggedMsg = msg
+  const log = document.getElementById('flightLog')
+  const entry = document.createElement('div')
+  entry.className = 'log-entry log-' + (level || 'ok')
+  entry.innerHTML = '<span class="log-time">' + getTimestamp() + '</span><span class="log-msg">' + msg + '</span>'
+  log.appendChild(entry)
+  log.scrollTop = log.scrollHeight
+  while(log.children.length > 60) log.removeChild(log.firstChild)
+}
+
+/* G-Force — calculated from vertical speed change each tick */
+let prevVs = 0
+function updateGForce(){
+  const vsChange = Math.abs(vs - prevVs)
+  prevVs = vs
+  let g = 1 + vsChange / 500
+  if(g > 6) g = 6
+  document.getElementById('gforceVal').textContent = g.toFixed(1) + ' G'
+  const gPct = (g / 6) * 100
+  const gFill = document.getElementById('gforceFill')
+  const gStatus = document.getElementById('gforceStatus')
+  document.getElementById('gforcePct').textContent = g.toFixed(1) + 'G'
+  gFill.style.width = gPct + '%'
+  if(g < 2){
+    gFill.style.background = 'var(--green)'
+    gStatus.style.color = 'var(--green)'
+    gStatus.textContent = 'NORMAL'
+    document.getElementById('gforceVal').style.color = 'var(--green)'
+  } else if(g < 3.5){
+    gFill.style.background = 'var(--amber)'
+    gStatus.style.color = 'var(--amber)'
+    gStatus.textContent = 'ELEVATED'
+    document.getElementById('gforceVal').style.color = 'var(--amber)'
+    logEvent('G-Force elevated: ' + g.toFixed(1) + 'G', 'warn')
+  } else {
+    gFill.style.background = 'var(--red)'
+    gStatus.style.color = 'var(--red)'
+    gStatus.textContent = 'CRITICAL'
+    document.getElementById('gforceVal').style.color = 'var(--red)'
+    logEvent('⚠ High G-Force: ' + g.toFixed(1) + 'G', 'crit')
+  }
+}
+
+/* Fuel warning — triggers at 20% */
+function updateFuelWarning(){
+  const fuelFill = document.getElementById('fuelLevelFill')
+  const fuelDot = document.getElementById('fuelDot')
+  const fuelWarnText = document.getElementById('fuelWarnText')
+  const pct = Math.max(0, Math.min(100, fuel))
+  fuelFill.style.width = pct + '%'
+  if(fuel > 30){
+    fuelFill.style.background = 'var(--green)'
+    fuelDot.style.background = 'var(--green)'
+    fuelWarnText.style.color = 'var(--text)'
+    fuelWarnText.textContent = 'Fuel level OK — ' + fuel.toFixed(1) + '%'
+  } else if(fuel > 20){
+    fuelFill.style.background = 'var(--amber)'
+    fuelDot.style.background = 'var(--amber)'
+    fuelWarnText.style.color = 'var(--amber)'
+    fuelWarnText.textContent = 'Low fuel — ' + fuel.toFixed(1) + '%'
+    logEvent('Fuel dropping: ' + fuel.toFixed(1) + '% remaining', 'warn')
+  } else {
+    fuelFill.style.background = 'var(--red)'
+    fuelDot.style.background = 'var(--red)'
+    fuelWarnText.style.color = 'var(--red)'
+    fuelWarnText.textContent = '⚠ CRITICAL FUEL — ' + fuel.toFixed(1) + '%'
+    logEvent('⚠ CRITICAL fuel: ' + fuel.toFixed(1) + '%', 'crit')
+    speak('Warning. Critical fuel level.')
+  }
+}
+
+/* Auto-log risk state changes */
+let prevRisk = -1
+function autoLogRisk(risk, message){
+  if(risk === prevRisk) return
+  prevRisk = risk
+  if(risk > 60) logEvent('🔴 ' + message, 'crit')
+  else if(risk > 30) logEvent('⚠ ' + message, 'warn')
+  else if(risk === 0) logEvent('Flight stable', 'ok')
+}
+
+/* Patch update() to call new features each tick */
+const _coreUpdate = update
+window.update = function(){
+  _coreUpdate()
+  updateGForce()
+  updateFuelWarning()
+  /* read current risk from bar width to log it */
+  const riskW = parseFloat(document.getElementById('riskFill').style.width) || 0
+  const alertMsg = document.getElementById('alertBox').textContent
+  autoLogRisk(Math.round(riskW), alertMsg)
+}
+/* restart interval with patched update */
+clearInterval(window._mainInterval)
+window._mainInterval = setInterval(window.update, 2000)
+
+/* Scenario Presets — only modify sliders, never touch existing logic */
+function runScenario(name){
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'))
+  event.target.classList.add('active')
+  if(name === 'engine'){
+    rpmRate.value = -150
+    tempRate.value = 1.5
+    speedRate.value = -3
+    logEvent('⚙ Scenario: Engine Failure', 'crit')
+    speak('Warning. Engine failure scenario activated.')
+  } else if(name === 'decompression'){
+    pressureRate.value = -0.004
+    altRate.value = -30
+    logEvent('💨 Scenario: Rapid Decompression', 'crit')
+    speak('Warning. Rapid decompression scenario activated.')
+  } else if(name === 'turbulence'){
+    vsRate.value = 300
+    aoaRate.value = 2
+    speedRate.value = -2
+    logEvent('〰 Scenario: Heavy Turbulence', 'warn')
+    speak('Warning. Heavy turbulence scenario activated.')
+  } else if(name === 'emergency'){
+    vsRate.value = -300
+    altRate.value = -100
+    speedRate.value = -4
+    logEvent('🛬 Scenario: Emergency Landing', 'warn')
+    speak('Emergency landing scenario activated.')
+  }
+}
+</script>
+</body>
+</html>

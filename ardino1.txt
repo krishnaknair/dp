@@ -1,0 +1,273 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// LCD
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Button Pins
+#define BTN_NEXT 2
+#define BTN_STALL 3
+#define BTN_STABLE 4
+
+// LEDs
+#define LED_GREEN 5
+#define LED_YELLOW 6
+#define LED_RED 7
+
+// Buzzer
+#define BUZZER 8
+
+// Variables
+float speed = 230;
+float altitude = 10000;
+float aoa = 5;
+float temp = 200;
+float pressure = 1;
+float rpm = 2000;
+float vs = 0;
+float fuel = 70;
+
+// Ideal
+float idealSpeed = 230;
+float idealAlt = 10000;
+float idealAOA = 5;
+float idealTemp = 200;
+float idealPressure = 1;
+float idealRPM = 2000;
+
+// Calculated
+float stability = 100;
+int risk = 0;
+float gForce = 1;
+
+// UI
+int screen = 0;
+unsigned long lastButtonTime = 0;
+unsigned long scrollTimer = 0;
+int scrollIndex = 0;
+String scrollText = "";
+
+// For G-force
+float prevVS = 0;
+
+// ================= SETUP =================
+void setup() {
+  lcd.init();
+  lcd.backlight();
+
+  pinMode(BTN_NEXT, INPUT_PULLUP);
+  pinMode(BTN_STALL, INPUT_PULLUP);
+  pinMode(BTN_STABLE, INPUT_PULLUP);
+
+  pinMode(LED_GREEN, OUTPUT);
+  pinMode(LED_YELLOW, OUTPUT);
+  pinMode(LED_RED, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+
+  lcd.setCursor(0, 0);
+  lcd.print("AI Flight System");
+  lcd.setCursor(0, 1);
+  lcd.print("Initializing...");
+  delay(1500);
+}
+
+// ================= LOOP =================
+void loop() {
+  handleButtons();
+  updateSimulation();
+  calculateStability();
+  calculateRisk();
+  updateGForce();
+  updateAlerts();
+  updateDisplay();
+}
+
+// ================= BUTTONS =================
+void handleButtons() {
+  if (millis() - lastButtonTime < 600) return;
+
+  if (!digitalRead(BTN_NEXT)) {
+    screen = (screen + 1) % 6;
+    lastButtonTime = millis();
+    scrollIndex = 0;
+  }
+
+  if (!digitalRead(BTN_STALL)) {
+    aoa = 15;
+    speed = 180;
+    vs = -500;
+    lastButtonTime = millis();
+  }
+
+  if (!digitalRead(BTN_STABLE)) {
+    stabilizeAircraft();
+    lastButtonTime = millis();
+  }
+}
+
+// ================= SIMULATION =================
+void updateSimulation() {
+  // slight drift simulation
+  speed += random(-1, 2);
+  altitude += random(-10, 11);
+  aoa += random(-1, 2) * 0.1;
+  temp += random(-1, 2);
+  pressure += random(-1, 2) * 0.001;
+  rpm += random(-5, 6);
+}
+
+// ================= STABILITY =================
+void calculateStability() {
+  stability = 100;
+  stability -= abs(speed - idealSpeed) * 0.2;
+  stability -= abs(altitude - idealAlt) / 500;
+  stability -= abs(aoa - idealAOA) * 2;
+
+  if (stability < 0) stability = 0;
+}
+
+// ================= RISK =================
+void calculateRisk() {
+  risk = 0;
+
+  if (pressure < 0.995) risk += 20;
+  if (temp > 220) risk += 25;
+  if (aoa > 12 && speed < 200) risk += 40;
+  if (vs < -400) risk += 30;
+  if (rpm < 1500) risk += 20;
+
+  if (risk > 100) risk = 100;
+}
+
+// ================= G-FORCE =================
+void updateGForce() {
+  float change = abs(vs - prevVS);
+  prevVS = vs;
+
+  gForce = 1 + change / 500.0;
+  if (gForce > 6) gForce = 6;
+}
+
+// ================= ALERTS =================
+void updateAlerts() {
+  digitalWrite(LED_GREEN, LOW);
+  digitalWrite(LED_YELLOW, LOW);
+  digitalWrite(LED_RED, LOW);
+
+  if (risk < 30) {
+    digitalWrite(LED_GREEN, HIGH);
+    digitalWrite(BUZZER, LOW);
+  }
+  else if (risk < 60) {
+    digitalWrite(LED_YELLOW, HIGH);
+    digitalWrite(BUZZER, LOW);
+  }
+  else {
+    digitalWrite(LED_RED, HIGH);
+    digitalWrite(BUZZER, HIGH);
+  }
+}
+
+// ================= STABILIZE =================
+void stabilizeAircraft() {
+  speed += (idealSpeed - speed) * 0.2;
+  altitude += (idealAlt - altitude) * 0.2;
+  aoa += (idealAOA - aoa) * 0.2;
+  temp += (idealTemp - temp) * 0.2;
+  pressure += (idealPressure - pressure) * 0.2;
+  rpm += (idealRPM - rpm) * 0.2;
+  vs += (0 - vs) * 0.2;
+}
+
+// ================= RECOMMENDATION =================
+String getRecommendation() {
+  String rec = "";
+
+  if (speed < idealSpeed) rec += "Inc Speed ";
+  else if (speed > idealSpeed) rec += "Dec Speed ";
+
+  if (aoa > idealAOA) rec += "Lower AOA ";
+  if (pressure < idealPressure) rec += "Fix Press ";
+
+  return rec;
+}
+
+// ================= ANALYSIS =================
+String getAnalysis() {
+  if (risk > 80) return "CRASH MODE";
+  if (risk > 60) return "CRITICAL";
+  if (risk > 30) return "WARNING";
+  return "STABLE";
+}
+
+// ================= AUTO SCROLL =================
+void autoScroll(String text) {
+  if (text.length() <= 16) {
+    lcd.print(text);
+    return;
+  }
+
+  if (millis() - scrollTimer > 400) {
+    scrollTimer = millis();
+    scrollIndex++;
+    if (scrollIndex > text.length()) scrollIndex = 0;
+  }
+
+  lcd.print(text.substring(scrollIndex, scrollIndex + 16));
+}
+
+// ================= DISPLAY =================
+void updateDisplay() {
+  lcd.clear();
+
+  switch (screen) {
+
+    case 0:
+      lcd.setCursor(0, 0);
+      lcd.print("Adjustments:");
+      lcd.setCursor(0, 1);
+      autoScroll(getRecommendation());
+      break;
+
+    case 1:
+      lcd.setCursor(0, 0);
+      lcd.print("Stability:");
+      lcd.print((int)stability);
+      lcd.print("%");
+      lcd.setCursor(0, 1);
+      lcd.print(getAnalysis());
+      break;
+
+    case 2:
+      lcd.setCursor(0, 0);
+      lcd.print("Crash Risk:");
+      lcd.print(risk);
+      lcd.print("%");
+      lcd.setCursor(0, 1);
+      lcd.print(getAnalysis());
+      break;
+
+    case 3:
+      lcd.setCursor(0, 0);
+      lcd.print("G-Force:");
+      lcd.print(gForce, 1);
+      lcd.print("G");
+      lcd.setCursor(0, 1);
+      lcd.print(getAnalysis());
+      break;
+
+    case 4:
+      lcd.setCursor(0, 0);
+      lcd.print("AI Recommend:");
+      lcd.setCursor(0, 1);
+      autoScroll(getRecommendation());
+      break;
+
+    case 5:
+      lcd.setCursor(0, 0);
+      lcd.print("AI Analysis:");
+      lcd.setCursor(0, 1);
+      autoScroll(getAnalysis());
+      break;
+  }
+}
