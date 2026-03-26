@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Aircraft Monitoring System - Enhanced UX</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --glass-bg: rgba(17, 24, 39, 0.7);
+  --glass-border: rgba(56, 189, 248, 0.2);
+  --accent-cyan: #06b6d4;
+  --accent-blue: #3b82f6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.4);
+  --glow-danger: 0 0 20px rgba(239, 68, 68, 0.6);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 100%);
+  color: var(--text-primary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Animated Background Particles */
+#particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--accent-cyan);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: float 20s infinite ease-in-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-30px) translateX(20px); }
+  50% { transform: translateY(-60px) translateX(-20px); }
+  75% { transform: translateY(-30px) translateX(20px); }
+}
+
+/* Glass-morphism containers */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Header */
+header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); box-shadow: var(--glow-cyan); }
+  50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(6, 182, 212, 0.6); }
+}
+
+.title-group h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+}
+
+.title-group .subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Status Badge */
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--success), #059669);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Main Layout */
+.container {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+/* Panel Styles */
+.panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  transition: all 0.3s ease;
+  animation: slideIn 0.6s ease forwards;
+  opacity: 0;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel:nth-child(1) { animation-delay: 0.1s; }
+.panel:nth-child(2) { animation-delay: 0.2s; }
+.panel:nth-child(3) { animation-delay: 0.3s; }
+
+.panel:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 12px 40px rgba(6, 182, 212, 0.2);
+  transform: translateY(-2px);
+}
+
+.panel h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent-cyan);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 3D Aircraft Visualization */
+#aircraft3D {
+  width: 100%;
+  height: 280px;
+  background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1), transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  position: relative;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.aircraft-model {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 80px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 20px var(--accent-cyan));
+}
+
+.horizon-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+  top: 50%;
+  left: 0;
+  opacity: 0.3;
+}
+
+.attitude-grid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(6, 182, 212, 0.1) 20px),
+    repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(6, 182, 212, 0.1) 20px);
+}
+
+/* Sensor Cards */
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.sensor-card {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.sensor-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.sensor-card:hover::before {
+  left: 100%;
+}
+
+.sensor-card:hover {
+  border-color: var(--accent-cyan);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.sensor-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.sensor-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--success);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.sensor-unit {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* Interactive Sliders */
+.slider-section {
+  margin-bottom: 20px;
+}
+
+.slider-row {
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.slider-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slider-value {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--danger) 0%, var(--warning) 50%, var(--success) 100%);
+  border-radius: 10px;
+  outline: none;
+  opacity: 0.9;
+  transition: opacity 0.3s;
+  cursor: pointer;
+}
+
+input[type=range]:hover {
+  opacity: 1;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-cyan);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+  transition: all 0.3s ease;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 1);
+}
+
+/* Circular Progress Indicators */
+.progress-ring-container {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.progress-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.ring-svg {
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: rgba(15, 23, 42, 0.8);
+  stroke-width: 8;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+}
+
+.ring-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.ring-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ring-title {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Charts with Glow Effect */
+.chart-container {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.1), transparent 70%);
+  pointer-events: none;
+}
+
+.chart-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+canvas {
+  position: relative;
+  z-index: 1;
+}
+
+/* Button Styles */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  color: white;
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.6);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), #dc2626);
+  color: white;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-danger);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--success), #059669);
+  color: white;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
+/* Action Buttons Grid */
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+/* Flight Log */
+.log-container {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 16px;
+  height: 300px;
+  overflow-y: auto;
+  margin-top: 16px;
+}
+
+.log-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-container::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+}
+
+.log-container::-webkit-scrollbar-thumb {
+  background: var(--accent-cyan);
+  border-radius: 4px;
+}
+
+.log-entry {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  border-left: 3px solid var(--success);
+  background: rgba(16, 185, 129, 0.1);
+  font-size: 11px;
+  display: flex;
+  gap: 10px;
+  animation: logSlideIn 0.3s ease;
+}
+
+@keyframes logSlideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.log-warn {
+  border-left-color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.log-crit {
+  border-left-color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+  animation: logPulse 0.5s ease;
+}
+
+@keyframes logPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.log-time {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--accent-cyan);
+  font-weight: 600;
+  min-width: 45px;
+}
+
+/* Scenario Presets */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.scenario-btn {
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.scenario-btn:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(6, 182, 212, 0.2);
+  transform: translateY(-2px);
+}
+
+.scenario-btn.active {
+  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.2);
+  box-shadow: var(--glow-danger);
+}
+
+/* Alert Box */
+.alert-box {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid var(--success);
+  color: var(--success);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin: 16px 0;
+  transition: all 0.3s ease;
+}
+
+/* Ideal Parameters Input */
+.ideal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ideal-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ideal-input-group label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ideal-input-group input {
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.ideal-input-group input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+}
+
+/* Keyboard Shortcuts Helper */
+.shortcuts-hint {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  z-index: 100;
+  opacity: 0;
+  animation: fadeInUp 0.5s ease 2s forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.shortcut-key {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(6, 182, 212, 0.2);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 4px;
+  color: var(--accent-cyan);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  margin: 0 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .container {
+    grid-template-columns: 280px 1fr 300px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    grid-template-columns: 1fr;
+    max-width: 800px;
+  }
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-primary);
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.tooltip.show {
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+
+<!-- Animated Background Particles -->
+<div id="particles"></div>
+
+<!-- Header -->
+<header>
+  <div class="logo-section">
+    <div class="logo-icon">✈️</div>
+    <div class="title-group">
+      <h1>AI AIRCRAFT MONITORING SYSTEM</h1>
+      <div class="subtitle">Intelligent Flight Safety Assistant</div>
+    </div>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot"></div>
+    <span>SYSTEM ONLINE</span>
+  </div>
+</header>
+
+<!-- Main Dashboard -->
+<div class="container">
+  
+  <!-- LEFT PANEL: Controls & Sensors -->
+  <div class="panel">
+    <h3>🎮 FLIGHT CONTROL</h3>
+    
+    <!-- 3D Aircraft Visualization -->
+    <div id="aircraft3D">
+      <div class="attitude-grid"></div>
+      <div class="horizon-line"></div>
+      <div class="aircraft-model">✈️</div>
+    </div>
+
+    <!-- Live Sensors -->
+    <h3>📊 LIVE SENSORS</h3>
+    <div class="sensor-grid">
+      <div class="sensor-card" data-tooltip="Current airspeed">
+        <div class="sensor-label">Airspeed</div>
+        <div class="sensor-val" id="speedVal">0.0<span class="sensor-unit">kts</span></div>
+      </div>
+      <div class="sensor-card" data-tooltip="Aircraft altitude">
+        <div class="sensor-label">Altitude</div>
+        <div class="sensor-val" id="altVal">0<span class="sensor-unit">ft</span></div>
+      </div>
+      <div class="sensor-card" data-tooltip="Angle of attack">
+        <div class="sensor-label">AOA</div>
+        <div class="sensor-val" id="aoaVal">0.0<span class="sensor-unit">°</span></div>
+      </div>
+      <div class="sensor-card" data-tooltip="Vertical speed">
+        <div class="sensor-label">V/S</div>
+        <div class="sensor-val" id="vsVal">0<span class="sensor-unit">fpm</span></div>
+      </div>
+      <div class="sensor-card" data-tooltip="Engine temperature">
+        <div class="sensor-label">Temp</div>
+        <div class="sensor-val" id="tempVal">0<span class="sensor-unit">°C</span></div>
+      </div>
+      <div class="sensor-card" data-tooltip="Cabin pressure">
+        <div class="sensor-label">Pressure</div>
+        <div class="sensor-val" id="pressureVal">0.00<span class="sensor-unit">atm</span></div>
+      </div>
+      <div class="sensor-card" data-tooltip="Engine RPM">
+        <div class="sensor-label">RPM</div>
+        <div class="sensor-val" id="rpmVal">0<span class="sensor-unit"></span></div>
+      </div>
+      <div class="sensor-card" data-tooltip="Fuel remaining">
+        <div class="sensor-label">Fuel</div>
+        <div class="sensor-val" id="fuelVal">100<span class="sensor-unit">%</span></div>
+      </div>
+    </div>
+
+    <!-- Simulation Sliders -->
+    <h3>⚙️ SIMULATION RATES</h3>
+    <div class="slider-section">
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>Airspeed Rate</span>
+          <span class="slider-value" id="speedRateVal">0 kts/s</span>
+        </div>
+        <input type="range" id="speedRate" min="-30" max="30" value="0" step="0.5">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>AOA Rate</span>
+          <span class="slider-value" id="aoaRateVal">0 °/s</span>
+        </div>
+        <input type="range" id="aoaRate" min="-10" max="10" value="0" step="0.1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>Altitude Rate</span>
+          <span class="slider-value" id="altRateVal">0 ft/s</span>
+        </div>
+        <input type="range" id="altRate" min="-100" max="100" value="0" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>Vertical Speed</span>
+          <span class="slider-value" id="vsRateVal">0 fpm</span>
+        </div>
+        <input type="range" id="vsRate" min="-500" max="500" value="0" step="10">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>RPM Rate</span>
+          <span class="slider-value" id="rpmRateVal">0 RPM/s</span>
+        </div>
+        <input type="range" id="rpmRate" min="-200" max="200" value="0" step="5">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>Pressure Rate</span>
+          <span class="slider-value" id="pressureRateVal">0.000 atm/s</span>
+        </div>
+        <input type="range" id="pressureRate" min="-0.01" max="0.01" value="0" step="0.0001">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>Temp Rate</span>
+          <span class="slider-value" id="tempRateVal">0 °C/s</span>
+        </div>
+        <input type="range" id="tempRate" min="-5" max="5" value="0" step="0.1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">
+          <span>Fuel Consumption</span>
+          <span class="slider-value" id="fuelRateVal">0.0 %/s</span>
+        </div>
+        <input type="range" id="fuelRate" min="0" max="2" value="0.1" step="0.01">
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-grid">
+      <button class="btn btn-danger" onclick="makeStall()">⚠️ TRIGGER STALL</button>
+      <button class="btn btn-success" onclick="stabilizeAircraft()">✓ STABILIZE</button>
+    </div>
+
+    <!-- Scenario Presets -->
+    <h3>🎬 SCENARIOS</h3>
+    <div class="scenario-grid">
+      <button class="scenario-btn" onclick="runScenario('engine')">⚙️ Engine Failure</button>
+      <button class="scenario-btn" onclick="runScenario('decompression')">💨 Decompression</button>
+      <button class="scenario-btn" onclick="runScenario('turbulence')">〰️ Turbulence</button>
+      <button class="scenario-btn" onclick="runScenario('emergency')">🛬 Emergency</button>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL: Charts & Visualization -->
+  <div class="panel">
+    <h3>📈 FLIGHT PARAMETERS</h3>
+
+    <!-- Circular Progress Rings -->
+    <div class="progress-ring-container">
+      <div class="progress-ring">
+        <svg class="ring-svg" width="120" height="120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-progress" id="stabilityRing" cx="60" cy="60" r="52" 
+                  stroke-dasharray="326.73" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="ring-label">
+          <div class="ring-value" id="stabilityPct">100%</div>
+          <div class="ring-title">Stability</div>
+        </div>
+      </div>
+      <div class="progress-ring">
+        <svg class="ring-svg" width="120" height="120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-progress" id="riskRing" cx="60" cy="60" r="52" 
+                  stroke-dasharray="326.73" stroke-dashoffset="326.73" style="stroke: var(--danger);"></circle>
+        </svg>
+        <div class="ring-label">
+          <div class="ring-value" id="riskPct">0%</div>
+          <div class="ring-title">Risk</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="alert-box" id="alertBox">✓ FLIGHT STABLE</div>
+
+    <!-- Charts -->
+    <div class="chart-container">
+      <div class="chart-title">⚡ CABIN PRESSURE</div>
+      <canvas id="pressureChart" height="120"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">🔥 ENGINE TEMPERATURE</div>
+      <canvas id="tempChart" height="120"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">💨 AIRSPEED</div>
+      <canvas id="speedChart" height="120"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">📍 ALTITUDE</div>
+      <canvas id="altChart" height="120"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">📐 ANGLE OF ATTACK</div>
+      <canvas id="aoaChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Analysis & Log -->
+  <div class="panel">
+    <h3>🤖 AI ANALYSIS</h3>
+    
+    <!-- Flight Phase Badge -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border-radius: 20px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 14px;" id="phase">
+        ⇒ CRUISE
+      </div>
+    </div>
+
+    <!-- AI Recommendations -->
+    <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; margin-bottom: 20px; min-height: 200px;">
+      <div style="font-size: 11px; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 12px; font-weight: 600;">
+        📋 AI RECOMMENDATIONS
+      </div>
+      <div id="aiRecommendations" style="font-size: 12px; line-height: 1.6; color: var(--text-secondary);">
+        All systems operating normally. No action required.
+      </div>
+    </div>
+
+    <!-- Ideal Flight Parameters -->
+    <h3>🎯 IDEAL PARAMETERS</h3>
+    <div class="ideal-grid">
+      <div class="ideal-input-group">
+        <label>Airspeed</label>
+        <input type="number" id="idealSpeed" value="230">
+      </div>
+      <div class="ideal-input-group">
+        <label>Altitude</label>
+        <input type="number" id="idealAlt" value="10000">
+      </div>
+      <div class="ideal-input-group">
+        <label>AOA</label>
+        <input type="number" id="idealAOA" value="5" step="0.1">
+      </div>
+      <div class="ideal-input-group">
+        <label>Temperature</label>
+        <input type="number" id="idealTemp" value="200">
+      </div>
+      <div class="ideal-input-group">
+        <label>Pressure</label>
+        <input type="number" id="idealPressure" value="1" step="0.01">
+      </div>
+      <div class="ideal-input-group">
+        <label>RPM</label>
+        <input type="number" id="idealRPM" value="2000">
+      </div>
+    </div>
+
+    <!-- Flight Log -->
+    <h3>📝 FLIGHT LOG</h3>
+    <div class="log-container" id="flightLog">
+      <div class="log-entry">
+        <span class="log-time" id="logInitTime">00:00</span>
+        <span class="log-msg">System initialized - Flight monitoring active</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Keyboard Shortcuts Hint -->
+<div class="shortcuts-hint">
+  Press <span class="shortcut-key">SPACE</span> to stabilize | <span class="shortcut-key">S</span> to trigger stall
+</div>
+
+<!-- Tooltip Element -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ============================================
+// BACKGROUND PARTICLES ANIMATION
+// ============================================
+function createParticles() {
+  const particlesContainer = document.getElementById('particles');
+  for (let i = 0; i < 50; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = Math.random() * 100 + '%';
+    particle.style.top = Math.random() * 100 + '%';
+    particle.style.animationDelay = Math.random() * 20 + 's';
+    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+    particlesContainer.appendChild(particle);
+  }
+}
+createParticles();
+
+// ============================================
+// FLIGHT SIMULATION VARIABLES
+// ============================================
+let speed = 230;
+let altitude = 10000;
+let aoa = 5;
+let temp = 200;
+let pressure = 1.0;
+let rpm = 2000;
+let vs = 0;
+let fuel = 100;
+
+const flightStart = Date.now();
+
+// ============================================
+// CHART SETUP
+// ============================================
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 500 },
+  plugins: {
+    legend: { display: false }
+  },
+  scales: {
+    x: { 
+      display: false,
+      grid: { display: false }
+    },
+    y: {
+      display: true,
+      grid: { 
+        color: 'rgba(56, 189, 248, 0.1)',
+        lineWidth: 1
+      },
+      ticks: { 
+        color: '#94a3b8',
+        font: { size: 10 }
+      }
+    }
+  }
+};
+
+function createChart(ctx, label, borderColor) {
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: Array(20).fill(''),
+      datasets: [
+        {
+          label: 'Actual',
+          data: Array(20).fill(0),
+          borderColor: borderColor,
+          backgroundColor: borderColor + '20',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0
+        },
+        {
+          label: 'Ideal',
+          data: Array(20).fill(0),
+          borderColor: '#10b981',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          tension: 0,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: chartOptions
+  });
+}
+
+const pressureChart = createChart(document.getElementById('pressureChart').getContext('2d'), 'Pressure', '#06b6d4');
+const tempChart = createChart(document.getElementById('tempChart').getContext('2d'), 'Temp', '#f59e0b');
+const speedChart = createChart(document.getElementById('speedChart').getContext('2d'), 'Speed', '#3b82f6');
+const altChart = createChart(document.getElementById('altChart').getContext('2d'), 'Altitude', '#8b5cf6');
+const aoaChart = createChart(document.getElementById('aoaChart').getContext('2d'), 'AOA', '#ec4899');
+
+function push(chart, val, ideal) {
+  chart.data.datasets[0].data.shift();
+  chart.data.datasets[0].data.push(val);
+  chart.data.datasets[1].data.shift();
+  chart.data.datasets[1].data.push(ideal);
+  chart.update('none');
+}
+
+// ============================================
+// SLIDER UPDATES
+// ============================================
+const sliders = [
+  { id: 'speedRate', label: 'speedRateVal', unit: ' kts/s' },
+  { id: 'aoaRate', label: 'aoaRateVal', unit: ' °/s' },
+  { id: 'altRate', label: 'altRateVal', unit: ' ft/s' },
+  { id: 'vsRate', label: 'vsRateVal', unit: ' fpm' },
+  { id: 'rpmRate', label: 'rpmRateVal', unit: ' RPM/s' },
+  { id: 'pressureRate', label: 'pressureRateVal', unit: ' atm/s', decimals: 3 },
+  { id: 'tempRate', label: 'tempRateVal', unit: ' °C/s' },
+  { id: 'fuelRate', label: 'fuelRateVal', unit: ' %/s', decimals: 2 }
+];
+
+sliders.forEach(s => {
+  const slider = document.getElementById(s.id);
+  const label = document.getElementById(s.label);
+  slider.oninput = () => {
+    const val = parseFloat(slider.value);
+    label.textContent = (s.decimals ? val.toFixed(s.decimals) : val) + s.unit;
+  };
+});
+
+// ============================================
+// SPEECH SYNTHESIS
+// ============================================
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.2;
+    utterance.pitch = 1;
+    speechSynthesis.speak(utterance);
+  }
+}
+
+// ============================================
+// AI RECOMMENDATIONS
+// ============================================
+function generateRecommendations() {
+  const ideal = {
+    speed: parseFloat(document.getElementById('idealSpeed').value),
+    alt: parseFloat(document.getElementById('idealAlt').value),
+    aoa: parseFloat(document.getElementById('idealAOA').value),
+    temp: parseFloat(document.getElementById('idealTemp').value),
+    pressure: parseFloat(document.getElementById('idealPressure').value),
+    rpm: parseFloat(document.getElementById('idealRPM').value)
+  };
+
+  let recs = [];
+  
+  if (Math.abs(speed - ideal.speed) > 10) {
+    recs.push(`• ${speed > ideal.speed ? 'Reduce' : 'Increase'} throttle to target ${ideal.speed} kts`);
+  }
+  if (Math.abs(altitude - ideal.alt) > 500) {
+    recs.push(`• ${altitude > ideal.alt ? 'Descend' : 'Climb'} to ${ideal.alt} ft`);
+  }
+  if (Math.abs(aoa - ideal.aoa) > 2) {
+    recs.push(`• Adjust pitch to achieve ${ideal.aoa}° angle of attack`);
+  }
+  if (temp > ideal.temp + 20) {
+    recs.push(`• ⚠️ Engine temperature critical - reduce power immediately`);
+  }
+  if (pressure < ideal.pressure - 0.05) {
+    recs.push(`• ⚠️ Cabin pressure loss - initiate emergency descent`);
+  }
+  if (rpm < ideal.rpm - 200) {
+    recs.push(`• Engine RPM low - check throttle and fuel systems`);
+  }
+  if (fuel < 30) {
+    recs.push(`• ⚠️ Low fuel - plan for nearest landing site`);
+  }
+  if (aoa > 12 && speed < 200) {
+    recs.push(`• 🔴 STALL WARNING - Lower nose and increase airspeed immediately!`);
+  }
+
+  const recBox = document.getElementById('aiRecommendations');
+  if (recs.length === 0) {
+    recBox.innerHTML = '<div style="color: var(--success);">✓ All systems operating normally. No action required.</div>';
+  } else {
+    recBox.innerHTML = recs.join('<br>');
+  }
+}
+
+// ============================================
+// 3D AIRCRAFT ATTITUDE VISUALIZATION
+// ============================================
+function update3DAircraft() {
+  const aircraft = document.querySelector('.aircraft-model');
+  const horizon = document.querySelector('.horizon-line');
+  
+  // Roll (AOA simulation)
+  const roll = aoa * 3; // exaggerate for visibility
+  
+  // Pitch (vertical speed)
+  const pitch = vs / 100;
+  
+  aircraft.style.transform = `translate(-50%, -50%) rotate(${roll}deg) translateY(${pitch}px)`;
+  horizon.style.transform = `translateY(${-pitch * 2}px) rotate(${-roll / 2}deg)`;
+}
+
+// ============================================
+// CIRCULAR PROGRESS RINGS
+// ============================================
+function updateProgressRings() {
+  const circumference = 2 * Math.PI * 52;
+  
+  // Stability Ring
+  const stabilityVal = parseFloat(document.getElementById('stabilityPct').textContent);
+  const stabilityOffset = circumference - (stabilityVal / 100) * circumference;
+  const stabilityRing = document.getElementById('stabilityRing');
+  stabilityRing.style.strokeDashoffset = stabilityOffset;
+  
+  if (stabilityVal > 60) {
+    stabilityRing.style.stroke = 'var(--success)';
+  } else if (stabilityVal > 30) {
+    stabilityRing.style.stroke = 'var(--warning)';
+  } else {
+    stabilityRing.style.stroke = 'var(--danger)';
+  }
+  
+  // Risk Ring
+  const riskVal = parseFloat(document.getElementById('riskPct').textContent);
+  const riskOffset = circumference - (riskVal / 100) * circumference;
+  document.getElementById('riskRing').style.strokeDashoffset = riskOffset;
+}
+
+// ============================================
+// MAIN UPDATE FUNCTION
+// ============================================
+function update() {
+  // Update sensor values
+  speed += parseFloat(document.getElementById('speedRate').value) * 2;
+  altitude += parseFloat(document.getElementById('altRate').value) * 2;
+  aoa += parseFloat(document.getElementById('aoaRate').value) * 2;
+  temp += parseFloat(document.getElementById('tempRate').value) * 2;
+  pressure += parseFloat(document.getElementById('pressureRate').value) * 2;
+  rpm += parseFloat(document.getElementById('rpmRate').value) * 2;
+  vs = parseInt(document.getElementById('vsRate').value);
+  fuel -= parseFloat(document.getElementById('fuelRate').value) * 2;
+  
+  if (fuel < 0) fuel = 0;
+  if (pressure < 0) pressure = 0;
+  if (rpm < 0) rpm = 0;
+  
+  // Update display
+  document.getElementById('speedVal').innerHTML = `${speed.toFixed(1)}<span class="sensor-unit">kts</span>`;
+  document.getElementById('altVal').innerHTML = `${altitude.toFixed(0)}<span class="sensor-unit">ft</span>`;
+  document.getElementById('aoaVal').innerHTML = `${aoa.toFixed(1)}<span class="sensor-unit">°</span>`;
+  document.getElementById('vsVal').innerHTML = `${vs}<span class="sensor-unit">fpm</span>`;
+  document.getElementById('tempVal').innerHTML = `${temp.toFixed(0)}<span class="sensor-unit">°C</span>`;
+  document.getElementById('pressureVal').innerHTML = `${pressure.toFixed(2)}<span class="sensor-unit">atm</span>`;
+  document.getElementById('rpmVal').innerHTML = `${rpm.toFixed(0)}<span class="sensor-unit"></span>`;
+  document.getElementById('fuelVal').innerHTML = `${fuel.toFixed(1)}<span class="sensor-unit">%</span>`;
+  
+  // Update charts
+  const ideal = {
+    speed: parseFloat(document.getElementById('idealSpeed').value),
+    alt: parseFloat(document.getElementById('idealAlt').value),
+    aoa: parseFloat(document.getElementById('idealAOA').value),
+    temp: parseFloat(document.getElementById('idealTemp').value),
+    pressure: parseFloat(document.getElementById('idealPressure').value)
+  };
+  
+  push(pressureChart, pressure, ideal.pressure);
+  push(tempChart, temp, ideal.temp);
+  push(speedChart, speed, ideal.speed);
+  push(altChart, altitude, ideal.alt);
+  push(aoaChart, aoa, ideal.aoa);
+  
+  // Calculate stability
+  let stability = 100;
+  stability -= Math.abs(speed - ideal.speed) * 0.2;
+  stability -= Math.abs(altitude - ideal.alt) / 500;
+  stability -= Math.abs(aoa - ideal.aoa) * 2;
+  if (stability < 0) stability = 0;
+  
+  document.getElementById('stabilityPct').textContent = stability.toFixed(0) + '%';
+  
+  // Calculate risk
+  let risk = 0;
+  let message = "✓ FLIGHT STABLE";
+  
+  if (pressure < 0.95) { risk += 20; message = "⚠️ Cabin pressure decreasing"; }
+  if (temp > 220) { risk += 25; message = "🔥 Engine overheating"; }
+  if (aoa > 12 && speed < 200) {
+    risk += 40;
+    message = "🔴 STALL RISK DETECTED";
+    speak("Warning stall risk detected");
+  }
+  if (vs < -400) { risk += 30; message = "⚠️ Rapid descent"; }
+  if (rpm < 1500) { risk += 20; message = "⚙️ Engine RPM low"; }
+  if (fuel < 20) { risk += 25; message = "⛽ CRITICAL FUEL LEVEL"; }
+  if (risk > 80) { message = "🔴 CRASH PREVENTION MODE ACTIVATED"; }
+  
+  document.getElementById('riskPct').textContent = risk + '%';
+  
+  const alertBox = document.getElementById('alertBox');
+  alertBox.textContent = message;
+  
+  if (risk < 30) {
+    alertBox.style.background = 'rgba(16, 185, 129, 0.2)';
+    alertBox.style.borderColor = 'var(--success)';
+    alertBox.style.color = 'var(--success)';
+  } else if (risk < 60) {
+    alertBox.style.background = 'rgba(245, 158, 11, 0.2)';
+    alertBox.style.borderColor = 'var(--warning)';
+    alertBox.style.color = 'var(--warning)';
+  } else {
+    alertBox.style.background = 'rgba(239, 68, 68, 0.2)';
+    alertBox.style.borderColor = 'var(--danger)';
+    alertBox.style.color = 'var(--danger)';
+  }
+  
+  // Update flight phase
+  const phase = document.getElementById('phase');
+  if (altitude < 2000) {
+    phase.innerHTML = "🛬 LANDING";
+    phase.style.background = "linear-gradient(135deg, var(--warning), #d97706)";
+  } else if (vs > 200) {
+    phase.innerHTML = "▲ CLIMB";
+    phase.style.background = "linear-gradient(135deg, var(--accent-blue), #2563eb)";
+  } else if (vs < -200) {
+    phase.innerHTML = "▼ DESCENT";
+    phase.style.background = "linear-gradient(135deg, var(--accent-cyan), #0891b2)";
+  } else {
+    phase.innerHTML = "⇒ CRUISE";
+    phase.style.background = "linear-gradient(135deg, var(--success), #059669)";
+  }
+  
+  generateRecommendations();
+  update3DAircraft();
+  updateProgressRings();
+  autoLogRisk(risk, message);
+}
+
+// ============================================
+// FLIGHT LOG
+// ============================================
+function getTimestamp() {
+  const elapsed = Math.floor((Date.now() - flightStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  return m + ':' + s;
+}
+
+let lastLoggedMsg = '';
+function logEvent(msg, level) {
+  if (msg === lastLoggedMsg) return;
+  lastLoggedMsg = msg;
+  const log = document.getElementById('flightLog');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry' + (level ? ' log-' + level : '');
+  entry.innerHTML = `<span class="log-time">${getTimestamp()}</span><span class="log-msg">${msg}</span>`;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+  while (log.children.length > 60) log.removeChild(log.firstChild);
+}
+
+let prevRisk = -1;
+function autoLogRisk(risk, message) {
+  if (risk === prevRisk) return;
+  prevRisk = risk;
+  if (risk > 60) logEvent('🔴 ' + message, 'crit');
+  else if (risk > 30) logEvent('⚠️ ' + message, 'warn');
+  else if (risk === 0) logEvent('✓ Flight stable', '');
+}
+
+// ============================================
+// ACTION FUNCTIONS
+// ============================================
+function makeStall() {
+  document.getElementById('aoaRate').value = 10;
+  document.getElementById('speedRate').value = -20;
+  document.getElementById('vsRate').value = -400;
+  document.getElementById('altRate').value = -50;
+  logEvent('🔴 STALL CONDITION TRIGGERED', 'crit');
+  speak("Warning. Stall condition detected. Crash risk increasing.");
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+}
+
+function stabilizeAircraft() {
+  speak("Aircraft stabilization in progress. Returning to safe flight.");
+  
+  document.getElementById('speedRate').value = 0;
+  document.getElementById('aoaRate').value = 0;
+  document.getElementById('altRate').value = 0;
+  document.getElementById('vsRate').value = 0;
+  document.getElementById('rpmRate').value = 0;
+  document.getElementById('pressureRate').value = 0;
+  document.getElementById('tempRate').value = 0;
+  
+  const targets = {
+    speed: parseFloat(document.getElementById('idealSpeed').value) || 230,
+    alt: parseFloat(document.getElementById('idealAlt').value) || 10000,
+    aoa: parseFloat(document.getElementById('idealAOA').value) || 5,
+    temp: parseFloat(document.getElementById('idealTemp').value) || 200,
+    pressure: parseFloat(document.getElementById('idealPressure').value) || 1,
+    rpm: parseFloat(document.getElementById('idealRPM').value) || 2000
+  };
+  
+  const steps = 35;
+  const duration = 7000;
+  let step = 0;
+  
+  if (window._stabilizeInterval) clearInterval(window._stabilizeInterval);
+  
+  window._stabilizeInterval = setInterval(() => {
+    const t = 0.18;
+    
+    speed += (targets.speed - speed) * t;
+    altitude += (targets.alt - altitude) * t;
+    aoa += (targets.aoa - aoa) * t;
+    temp += (targets.temp - temp) * t;
+    pressure += (targets.pressure - pressure) * t;
+    rpm += (targets.rpm - rpm) * t;
+    vs += (0 - vs) * t;
+    
+    step++;
+    if (step >= steps) {
+      speed = targets.speed;
+      altitude = targets.alt;
+      aoa = targets.aoa;
+      temp = targets.temp;
+      pressure = targets.pressure;
+      rpm = targets.rpm;
+      vs = 0;
+      clearInterval(window._stabilizeInterval);
+      logEvent('✓ Aircraft stabilized - All parameters restored', '');
+      speak("Aircraft stabilized. All parameters normal.");
+      document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+    }
+  }, duration / steps);
+}
+
+function runScenario(name) {
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  if (name === 'engine') {
+    document.getElementById('rpmRate').value = -150;
+    document.getElementById('tempRate').value = 1.5;
+    document.getElementById('speedRate').value = -3;
+    logEvent('⚙️ Scenario: Engine Failure', 'crit');
+    speak('Warning. Engine failure scenario activated.');
+  } else if (name === 'decompression') {
+    document.getElementById('pressureRate').value = -0.004;
+    document.getElementById('altRate').value = -30;
+    logEvent('💨 Scenario: Rapid Decompression', 'crit');
+    speak('Warning. Rapid decompression scenario activated.');
+  } else if (name === 'turbulence') {
+    document.getElementById('vsRate').value = 300;
+    document.getElementById('aoaRate').value = 2;
+    document.getElementById('speedRate').value = -2;
+    logEvent('〰️ Scenario: Heavy Turbulence', 'warn');
+    speak('Warning. Heavy turbulence scenario activated.');
+  } else if (name === 'emergency') {
+    document.getElementById('vsRate').value = -300;
+    document.getElementById('altRate').value = -100;
+    document.getElementById('speedRate').value = -4;
+    logEvent('🛬 Scenario: Emergency Landing', 'warn');
+    speak('Emergency landing scenario activated.');
+  }
+}
+
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    stabilizeAircraft();
+  } else if (e.code === 'KeyS') {
+    makeStall();
+  }
+});
+
+// ============================================
+// TOOLTIP SYSTEM
+// ============================================
+const tooltip = document.getElementById('tooltip');
+document.querySelectorAll('[data-tooltip]').forEach(el => {
+  el.addEventListener('mouseenter', (e) => {
+    tooltip.textContent = el.getAttribute('data-tooltip');
+    tooltip.classList.add('show');
+  });
+  el.addEventListener('mousemove', (e) => {
+    tooltip.style.left = e.pageX + 15 + 'px';
+    tooltip.style.top = e.pageY + 15 + 'px';
+  });
+  el.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('show');
+  });
+});
+
+// ============================================
+// START SIMULATION
+// ============================================
+document.getElementById('logInitTime').textContent = getTimestamp();
+setInterval(update, 2000);
+</script>
+
+</body>
+</html>
